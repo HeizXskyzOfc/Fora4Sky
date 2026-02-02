@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Vercel HTML Deployer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.box {
+    background: #020617;
+    padding: 25px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 420px;
+}
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+input, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: none;
+}
+input {
+    background: #020617;
+    border: 1px solid #334155;
+    color: #fff;
+}
+input[type="file"] {
+    padding: 8px;
+}
+button {
+    background: #2563eb;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+button:hover {
+    background: #1d4ed8;
+}
+#log {
+    margin-top: 15px;
+    font-size: 14px;
+    white-space: pre-wrap;
+}
+</style>
+</head>
+<body>
+
+<div class="box">
+<h2>Deploy HTML ke Vercel</h2>
+
+<input id="project" placeholder="Nama Website / Project">
+<input id="file" type="file" accept=".html">
+
+<button onclick="deploy()">Deploy ke Vercel</button>
+
+<div id="log"></div>
+</div>
+
+<script>
+// 🔴 API KEY HARDCODE DI SINI
+const VERCEL_API_KEY = "RjZT8QNcTSfzo9U3ZeQJ1h6B";
+
+async function deploy() {
+    const project = document.getElementById("project").value;
+    const fileInput = document.getElementById("file");
+    const log = document.getElementById("log");
+
+    if (!project || fileInput.files.length === 0) {
+        log.textContent = "❌ Nama Website dan File HTML wajib diisi";
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const htmlContent = await file.text();
+
+    try {
+        log.textContent = "⏳ Membuat project...";
+
+        await fetch("https://api.vercel.com/v9/projects", {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + VERCEL_API_KEY,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name: project,
+                framework: null
+            })
+        });
+
+        log.textContent = "🚀 Deploying website...";
+
+        const deployRes = await fetch("https://api.vercel.com/v13/deployments", {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + VERCEL_API_KEY,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name: project,
+                files: [
+                    {
+                        file: "index.html",
+                        data: htmlContent
+                    }
+                ],
+                projectSettings: {
+                    framework: null
+                }
+            })
+        });
+
+        const data = await deployRes.json();
+
+        log.textContent =
+            "✅ Deploy berhasil!\n\n" +
+            "URL Website:\nhttps://" + data.url;
+
+    } catch (e) {
+        log.textContent = "❌ Error:\n" + e;
+    }
+}
+</script>
+
+</body>
+</html>
